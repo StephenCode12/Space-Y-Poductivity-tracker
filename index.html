@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="A simple manufacturing productivity timer and work notebook.">
+  <title>Work Rate</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">⚡</span><span>WORK RATE</span></div>
+    <span id="runStatus" class="status-pill"><i></i> READY</span>
+  </header>
+
+  <main>
+    <section id="timerView" class="view active" aria-labelledby="timerTab">
+      <div class="category-row">
+        <label for="categorySelect">WORK CATEGORY</label>
+        <button id="manageCategoriesBtn" class="text-btn" type="button">Manage</button>
+      </div>
+      <select id="categorySelect" class="field category-select" aria-label="Work category"></select>
+
+      <section class="timer-card">
+        <p class="eyebrow">ELAPSED TIME</p>
+        <output id="timerDisplay" class="timer-display">00:00:00</output>
+        <div class="timer-actions">
+          <button id="startBtn" class="btn primary" type="button">▶ START</button>
+          <button id="pauseBtn" class="btn warning hidden" type="button">Ⅱ PAUSE</button>
+          <button id="finishBtn" class="btn finish" type="button" disabled>■ FINISH</button>
+        </div>
+      </section>
+
+      <section class="live-grid">
+        <div>
+          <label for="liveQuantity">QUANTITY COMPLETED</label>
+          <div class="stepper">
+            <button id="minusQty" type="button" aria-label="Decrease quantity">−</button>
+            <input id="liveQuantity" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <button id="plusQty" type="button" aria-label="Increase quantity">+</button>
+          </div>
+        </div>
+        <div class="rate-panel">
+          <span>CURRENT RATE</span>
+          <strong id="liveRate">—</strong>
+          <small id="liveRateUnit">Form Boards/hour</small>
+        </div>
+      </section>
+
+      <details class="note-panel">
+        <summary>＋ Add session name or note</summary>
+        <label for="liveName">SESSION NAME <small>(OPTIONAL)</small></label>
+        <input id="liveName" class="field" maxlength="60" placeholder="e.g. Board 2282">
+        <label for="liveNotes">NOTES <small>(OPTIONAL)</small></label>
+        <textarea id="liveNotes" class="field" rows="3" placeholder="Missing parts, training, rework, interruptions…"></textarea>
+      </details>
+
+      <section class="recent-section">
+        <div class="section-head"><h2>RECENT SESSIONS</h2><button id="seeHistoryBtn" class="text-btn" type="button">See all</button></div>
+        <div id="recentList" class="entry-list"></div>
+      </section>
+    </section>
+
+    <section id="historyView" class="view" aria-labelledby="historyTab">
+      <div class="page-title"><div><p class="eyebrow">WORK NOTEBOOK</p><h1>History</h1></div><button id="exportBtn" class="btn compact" type="button">⇩ CSV</button></div>
+      <select id="historyFilter" class="field" aria-label="Filter history by category"></select>
+      <div id="historyList" class="entry-list full-list"></div>
+    </section>
+
+    <section id="summaryView" class="view" aria-labelledby="summaryTab">
+      <div class="page-title"><div><p class="eyebrow">PRODUCTION SNAPSHOT</p><h1>Summary</h1></div></div>
+      <select id="summaryCategory" class="field" aria-label="Summary category"></select>
+      <div id="summaryCards" class="summary-grid"></div>
+      <p class="summary-note">Overall rates use total units divided by total recorded time.</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button id="timerTab" class="nav-btn active" data-view="timerView" type="button"><span>◷</span>Timer</button>
+    <button id="historyTab" class="nav-btn" data-view="historyView" type="button"><span>▤</span>History</button>
+    <button id="summaryTab" class="nav-btn" data-view="summaryView" type="button"><span>⌁</span>Summary</button>
+  </nav>
+
+  <dialog id="sessionDialog">
+    <form id="sessionForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">FINISH SESSION</p><h2 id="dialogTitle">Save your work</h2></div><button id="closeSessionDialog" class="icon-btn" type="button" aria-label="Close">×</button></div>
+      <input id="editId" type="hidden">
+      <div class="result-banner"><strong id="dialogTime">00:00:00</strong><span id="dialogCategory">Form Boards</span></div>
+      <label for="dialogQuantity">QUANTITY COMPLETED</label>
+      <input id="dialogQuantity" class="field" type="number" inputmode="decimal" min="0.01" step="0.01" required>
+      <div class="calculated-row"><div><span>UNITS / HOUR</span><strong id="dialogRate">—</strong></div><div><span>MIN / UNIT</span><strong id="dialogMinutes">—</strong></div></div>
+      <label for="dialogName">SESSION NAME <small>(OPTIONAL)</small></label>
+      <input id="dialogName" class="field" maxlength="60" placeholder="e.g. Board 2282">
+      <label for="dialogNotes">NOTES <small>(OPTIONAL)</small></label>
+      <textarea id="dialogNotes" class="field" rows="4" placeholder="What affected the rate?"></textarea>
+      <button class="btn primary wide" value="default" type="submit">SAVE SESSION</button>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog">
+    <div id="detailContent"></div>
+  </dialog>
+
+  <dialog id="categoryDialog">
+    <form id="categoryForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">WORK TYPES</p><h2>Categories</h2></div><button id="closeCategoryDialog" class="icon-btn" type="button" aria-label="Close">×</button></div>
+      <div id="categoryList" class="category-list"></div>
+      <label for="newCategory">NEW CATEGORY</label>
+      <div class="inline-add"><input id="newCategory" class="field" maxlength="40" placeholder="e.g. Soldering"><button id="addCategoryBtn" class="btn compact" type="button">ADD</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
